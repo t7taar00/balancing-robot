@@ -1,0 +1,40 @@
+const int pulssiMax = 255;
+const int pulssiMin = 80;
+
+const float kp = 5;    // Proportionaalinen kerroin
+const float ki = 0.05; // Integraalinen kerroin
+const float kd = 1;    // Derivaatallinen kerroin
+
+float PID_timer = 0;
+float elapsedTime = 0;
+float timePrev = 0;
+
+float PID_Proportional = 0;
+float PID_Integral = 0;
+float PID_Derivative = 0;
+
+float error = 0;
+float prevError = 0;
+float errorSum = 0;
+
+float output = 0;
+
+float pulssiLaskenta(float sensArvo) {
+  PID_timer = millis();
+  elapsedTime = (PID_timer - timePrev); // Yhteen toistoon kulunut aika
+  error = sensArvo;                     // M‰‰ritell‰‰n virhe jota pyrit‰‰n korjaamaan
+  
+  PID_Proportional = error * kp;                             // Suhteellinen funktio
+  errorSum += (error * elapsedTime);                         // Integraalinen funktio
+  PID_Integral = ki * errorSum;
+  PID_Derivative = kd * ((error - prevError)/elapsedTime);   // Derivatiivinen funktio
+  output = PID_Proportional + PID_Integral + PID_Derivative; // Lasketaan funktioiden summa, jota k‰ytet‰‰n PWM signaalina moottoreille
+
+  if(output < 0) output = output * (-1);      // Muunnetaan arvot positiivisiksi
+  if(output < pulssiMin) output = pulssiMin;  // Annetaan moottorille pienin PWM arvo jolla se jaksaa liikkua
+  if(output > pulssiMax) output = pulssiMax;  // Rajoitetaan PWM maksimiarvo
+
+  prevError = error;
+  timePrev = PID_timer;
+  return output;
+}
